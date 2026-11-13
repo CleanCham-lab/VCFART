@@ -6,7 +6,7 @@
 </p>
 
 <p align="center">
-  <b>VCF ARTificial</b> — 전사체의 지정 구간에서 만들 수 있는 모든 변이를, 바로 annotation 가능한 VCF로 뿜어냅니다.<br>
+  <b>VCF ARTificial</b> — 뿌아아아아앙~, 전사체의 지정 구간에서 만들 수 있는 모든 변이를, 바로 annotation 가능한 VCF로 뿜어냅니다.<br>
   <i>뿌뿡 💨 — MAVE, saturation genome editing(SGE), deep mutational scanning(DMS), SpliceAI 스캔용.</i>
 </p>
 
@@ -21,7 +21,7 @@
 
 ---
 
-## 💨 무엇을 하나요
+## 💨 무엇을 하나요 뿌뿡
 
 reference genome(hg19 / hg38), 전사체(`NM_007294.4`), 그리고 평소 쓰던 방식 그대로의 구간
 (`c.5075-100_c.5152+100`, `exon17:100`, `chr17:43063774-43064051`)만 주면 아래 파일을 만듭니다.
@@ -37,7 +37,7 @@ MAVE 라이브러리 전체를 실험 전(또는 후)에 *in silico*로 점수 �
 
 <p align="center"><img src="docs/terminal.png" alt="터미널에서 VCFART 실행 화면" width="760"></p>
 
-### ✨ 기능
+### ✨ 기능 뿡
 
 - **전사체 기준 좌표** — HGVS c./n. 번호 체계 전체 지원: CDS, 5′/3′ UTR(`c.-30`, `c.*12`),
   인트론 offset(`c.5075-1`, `c.-30+5`), 전사체 바깥 위치까지. minus strand 유전자도 자동 처리
@@ -64,7 +64,7 @@ MAVE 라이브러리 전체를 실험 전(또는 후)에 *in silico*로 점수 �
 
 ---
 
-## 📦 설치
+## 설치 뿌뿡
 
 ```bash
 python -m pip install git+https://github.com/CleanCham-lab/VCFART.git
@@ -81,7 +81,7 @@ cd examples
 ./run_demo.sh          # examples/out/ 에 *.vcf / *.tsv / *.oligos.fa 생성
 ```
 
-## 🧬 실제 데이터
+## 🧬 실제 데이터 뿌뿌뿡
 
 ```bash
 # 1. 전사체 테이블 — ANNOVAR 것을 그대로 쓰거나, UCSC에서 한 번 내려받기
@@ -189,7 +189,7 @@ R/Bioconductor 기반으로 MANE 전사체 전체의 SNV를 시뮬레이션하�
 
 ## 📖 인용
 
-VCFART가 도움이 되었다면 저장소를 인용해 주세요 (`CITATION.cff` 참고).
+VCFART가 도움이 되었다면 저장소를 인용해 주세요 뿌ㅇㅇㅇ우우웅 (`CITATION.cff` 참고).
 
 ## 📄 라이선스
 
