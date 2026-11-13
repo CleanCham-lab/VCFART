@@ -68,7 +68,11 @@ html[data-lang="ko"] h1{font-weight:900;letter-spacing:-.03em;line-height:1.12}
 .mapcap h2{font-size:1.05rem;font-weight:700;font-variation-settings:"wdth" 100;margin:0}
 .mapcap p{margin:0;color:var(--muted);font-size:15px}
 .scroller{overflow-x:auto;padding:4px 2px 10px}
-.map{display:grid;gap:2px;min-width:calc(2rem + var(--n) * 11px)}
+.map{display:grid;gap:2px;min-width:calc(2rem + var(--n) * var(--cw))}
+.scroller{--cw:11px}
+.scroller.dense{--cw:8px}
+.dense .map,.dense .model{gap:1px}
+.dense .map .refc{font-size:9.5px;letter-spacing:-.04em}
 .map .row{display:contents}
 .map .lab{font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;align-items:center;justify-content:center}
 .map .refc{font-family:var(--mono);font-size:11.5px;text-align:center;line-height:20px;color:var(--muted);border-radius:2px}
@@ -81,12 +85,12 @@ html[data-lang="ko"] h1{font-weight:900;letter-spacing:-.03em;line-height:1.12}
 .cell.v5.sel,.cell.v4.sel{outline-color:var(--puff)}
 .map .edge{box-shadow:-3px 0 0 -1px var(--paper),-4px 0 0 -1px var(--ink)}
 .map .cell.wt.edge{box-shadow:inset 0 0 0 1px var(--rule),-3px 0 0 -1px var(--paper),-4px 0 0 -1px var(--ink)}
-.model{display:grid;gap:2px;margin-top:10px;min-width:calc(2rem + var(--n) * 11px)}
+.model{display:grid;gap:2px;margin-top:10px;min-width:calc(2rem + var(--n) * var(--cw))}
 .seg{position:relative;height:30px}
 .seg.intron::before{content:"";position:absolute;left:0;right:0;top:7px;height:2px;background:var(--ink)}
 .seg.exon::before{content:"";position:absolute;left:0;right:0;top:0;height:16px;background:var(--ink);border-radius:2px}
 .seg span{position:absolute;top:17px;left:0;font-size:13px;white-space:nowrap;color:var(--ink)}
-.ends{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--muted);margin-left:2rem;min-width:calc(var(--n) * 11px)}
+.ends{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--muted);margin-left:2rem;min-width:calc(var(--n) * var(--cw))}
 .puffin .cell{animation:puff .42s cubic-bezier(.2,1.6,.4,1) both;animation-delay:calc(var(--i) * 9ms)}
 @keyframes puff{from{opacity:0;transform:scale(.25)}to{opacity:1;transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.puffin .cell{animation:none}}
@@ -244,7 +248,7 @@ footer .ppung{color:var(--puff);font-weight:700}
 
   <section class="block wrap" aria-labelledby="s-out">
     <h2 class="sec" id="s-out"><span class="emo" aria-hidden="true">📦</span><span data-l="en">What comes out</span><span data-l="ko">출력 파일</span></h2>
-    <p class="intro"><span data-l="en">Three plain-text files per run, shown here exactly as VCFART wrote them for the map above.</span><span data-l="ko">실행할 때마다 텍스트 파일 세 개가 나옵니다. 아래는 위 지도를 만들 때 VCFART가 쓴 그대로입니다.</span></p>
+    <p class="intro"><span data-l="en">Three plain-text files per run. The lines below are copied unedited from the run shown above, on the demo gene bundled in <code>examples/</code>.</span><span data-l="ko">실행할 때마다 텍스트 파일 세 개가 나옵니다. 아래 줄들은 위 터미널 화면의 실행(<code>examples/</code>에 들어 있는 demo 유전자)에서 그대로 가져왔습니다.</span></p>
     <div class="files">
       <div>
         <h3>PREFIX.vcf</h3>
@@ -368,7 +372,9 @@ const MAP = /*MAP-DATA*/{"title":"demo","tx":"NM_DEMO.1","gene":"DEMO1","cols":[
   const modelEl = document.getElementById("model");
   const scroller = mapEl.parentElement;
   scroller.style.setProperty("--n", n);
-  const template = `2rem repeat(${n}, minmax(9px, 1fr))`;
+  const dense = n > 80;
+  if (dense) scroller.classList.add("dense");
+  const template = `2rem repeat(${n}, minmax(${dense ? 7 : 9}px, 1fr))`;
   mapEl.style.gridTemplateColumns = template;
   modelEl.style.gridTemplateColumns = template;
 
