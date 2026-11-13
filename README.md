@@ -7,7 +7,7 @@
 
 <p align="center">
   <b>VCF ARTificial</b> — blow out every possible variant of a transcript region as a ready-to-annotate VCF.<br>
-  <i>뿌뿡 (ppu-ppung) 💨 — for MAVE, saturation genome editing (SGE), deep mutational scanning (DMS) and SpliceAI scans.</i>
+  <i>뿌뿡~💨 — for MAVE, saturation genome editing (SGE), deep mutational scanning (DMS) and SpliceAI scans.</i>
 </p>
 
 <p align="center">
