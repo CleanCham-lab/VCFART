@@ -11,6 +11,7 @@
 </p>
 
 <p align="center">
+  <a href="https://pypi.org/project/vcfart/"><img src="https://img.shields.io/pypi/v/vcfart?color=523f85" alt="PyPI"></a>
   <img src="https://img.shields.io/badge/python-3.9%2B-blue" alt="python">
   <img src="https://img.shields.io/badge/dependencies-none-brightgreen" alt="no dependencies">
   <img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="MIT">
