@@ -181,7 +181,7 @@ footer .ppung{color:var(--puff);font-weight:700}
     <p class="lede" data-l="en">VCFART reads HGVS ranges such as <code>c.5075-100_c.5152+100</code>, follows the transcript on your hg19 or hg38 FASTA, and writes every SNV, indel or codon swap as a sorted, normalized VCF that SpliceAI, ANNOVAR and VEP take as is.</p>
     <p class="lede" data-l="ko">VCFART는 <code>c.5075-100_c.5152+100</code> 같은 HGVS 구간을 읽고, hg19·hg38 FASTA 위에서 전사체를 따라가며, 가능한 모든 SNV·indel·코돈 치환을 정렬·정규화된 VCF로 씁니다. SpliceAI, ANNOVAR, VEP에 그대로 넣으면 됩니다.</p>
     <div class="install">
-      <div class="cmd"><pre id="pipcmd">python -m pip install git+https://github.com/CleanCham-lab/VCFART.git</pre><button type="button" class="btn dark" id="copy"><span data-l="en">Copy</span><span data-l="ko">복사</span></button></div>
+      <div class="cmd"><pre id="pipcmd">python -m pip install vcfart</pre><button type="button" class="btn dark" id="copy"><span data-l="en">Copy</span><span data-l="ko">복사</span></button></div>
       <a class="btn line" href="https://github.com/CleanCham-lab/VCFART"><span data-l="en">Source on GitHub</span><span data-l="ko">GitHub에서 보기</span></a>
     </div>
   </div>
@@ -322,9 +322,9 @@ ex3  1936  G   A   NM_DEMO.1:c.188C&gt;T     <mark>p.Pro63Leu</mark>  missense_v
 
   <section class="block wrap" aria-labelledby="s-start">
     <h2 class="sec" id="s-start"><span class="emo" aria-hidden="true">🚀</span><span data-l="en">Start in four commands</span><span data-l="ko">명령 네 개로 시작하기</span></h2>
-    <p class="intro"><span data-l="en">Python 3.8 or newer, nothing else to install. Your FASTA gets a <code>.fai</code> index on first use if it has none.</span><span data-l="ko">Python 3.8 이상이면 끝, 다른 설치는 없습니다. FASTA에 <code>.fai</code>가 없으면 처음 실행할 때 만듭니다.</span></p>
+    <p class="intro"><span data-l="en">Python 3.9 or newer, nothing else to install. Your FASTA gets a <code>.fai</code> index on first use if it has none.</span><span data-l="ko">Python 3.9 이상이면 끝, 다른 설치는 없습니다. FASTA에 <code>.fai</code>가 없으면 처음 실행할 때 만듭니다.</span></p>
     <ol class="steps">
-      <li><div><p><span data-l="en">Install</span><span data-l="ko">설치</span></p><pre class="snip">python -m pip install git+https://github.com/CleanCham-lab/VCFART.git</pre></div></li>
+      <li><div><p><span data-l="en">Install</span><span data-l="ko">설치</span></p><pre class="snip">python -m pip install vcfart</pre></div></li>
       <li><div><p><span data-l="en">Look up the transcript</span><span data-l="ko">전사체 확인</span></p><pre class="snip">vcfart info -f hg38.fa -a humandb/hg38_refGene.txt -t NM_007294.4</pre></div></li>
       <li><div><p><span data-l="en">Generate the variants</span><span data-l="ko">변이 생성</span></p><pre class="snip">vcfart generate -f hg38.fa -a humandb/hg38_refGene.txt -t NM_007294.4 \
     -r exon17:100 -m snv,del -o BRCA1_ex17</pre></div></li>

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1 — 2026-11-13
+- First release on PyPI: `python -m pip install vcfart` (published from GitHub Actions, trusted publishing).
+- README images and links use absolute URLs so they render on PyPI; sdist now ships the test fixtures
+  and examples; SPDX license metadata; Python ≥ 3.9.
+
 ## 1.0.0 — 2026-11-13
 First stable public release.
 - `vcfart generate`: SNV / deletion / insertion / codon (DMS) saturation from HGVS c./n./g. ranges,

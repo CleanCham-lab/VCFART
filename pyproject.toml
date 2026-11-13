@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,14 +7,16 @@ name = "vcfart"
 dynamic = ["version"]
 description = "VCF ARTificial: generate saturation-mutagenesis VCFs (all SNVs / indels / codon swaps) from a transcript + HGVS range, for MAVE, SGE, DMS and SpliceAI scans"
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "Seung Won Chae" }]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = []
 keywords = ["VCF", "MAVE", "saturation mutagenesis", "SGE", "DMS", "HGVS", "SpliceAI", "variant library"]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Environment :: Console",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Intended Audience :: Science/Research",
@@ -27,6 +29,8 @@ test = ["pytest"]
 [project.urls]
 Homepage = "https://cleancham-lab.github.io/VCFART/"
 Repository = "https://github.com/CleanCham-lab/VCFART"
+Documentation = "https://github.com/CleanCham-lab/VCFART#readme"
+Changelog = "https://github.com/CleanCham-lab/VCFART/blob/main/CHANGELOG.md"
 Issues = "https://github.com/CleanCham-lab/VCFART/issues"
 
 [project.scripts]

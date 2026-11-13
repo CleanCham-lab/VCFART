@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="logo/logo_dark.png">
-    <img src="logo/logo.png" alt="VCFART" width="640">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/CleanCham-lab/VCFART/main/logo/logo_dark.png">
+    <img src="https://raw.githubusercontent.com/CleanCham-lab/VCFART/main/logo/logo.png" alt="VCFART" width="640">
   </picture>
 </p>
 
@@ -11,13 +11,13 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/python-3.8%2B-blue" alt="python">
+  <img src="https://img.shields.io/badge/python-3.9%2B-blue" alt="python">
   <img src="https://img.shields.io/badge/dependencies-none-brightgreen" alt="no dependencies">
   <img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="MIT">
   <a href="https://cleancham-lab.github.io/VCFART/"><img src="https://img.shields.io/badge/homepage-%F0%9F%92%A8%20vcfart-523f85" alt="homepage"></a>
 </p>
 
-[English](README.md) | **한국어** | [홈페이지](https://cleancham-lab.github.io/VCFART/)
+[English](https://github.com/CleanCham-lab/VCFART/blob/main/README.md) | **한국어** | [홈페이지](https://cleancham-lab.github.io/VCFART/)
 
 ---
 
@@ -35,7 +35,7 @@ reference genome(hg19 / hg38), 전사체(`NM_007294.4`), 그리고 평소 쓰던
 VCF는 **SpliceAI, ANNOVAR, VEP, CADD, AlphaMissense 조회, bcftools**에 그대로 들어가므로,
 MAVE 라이브러리 전체를 실험 전(또는 후)에 *in silico*로 점수 매길 수 있습니다.
 
-<p align="center"><img src="docs/terminal.png" alt="터미널에서 VCFART 실행 화면" width="760"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/CleanCham-lab/VCFART/main/docs/terminal.png" alt="터미널에서 VCFART 실행 화면" width="760"></p>
 
 ### ✨ 기능 뿡
 
@@ -58,7 +58,7 @@ MAVE 라이브러리 전체를 실험 전(또는 후)에 *in silico*로 점수 �
   `refGene` / `ncbiRefSeq` 테이블, RefSeq·GENCODE GTF(ENST)도 지원. `chr16`과 `16` 같은 이름 차이는 자동 매칭.
 - **안전장치** — CDS가 ATG로 시작/stop codon으로 끝나지 않거나 인트론이 GT-AG가 아니면 경고
   (= genome build와 annotation이 서로 다를 가능성).
-- **의존성 없음** — 순수 Python ≥ 3.8 표준 라이브러리만 사용. `.fai` 인덱스도 직접 읽고 만듦.
+- **의존성 없음** — 순수 Python ≥ 3.9 표준 라이브러리만 사용. `.fai` 인덱스도 직접 읽고 만듦.
 - **보기 좋은 실행 로그** — MultiQC 스타일 컬러 로그 + consequence 막대그래프. 파이프로 넘기거나
   `--no-color` / `NO_COLOR=1`이면 색이 꺼짐.
 
@@ -67,17 +67,17 @@ MAVE 라이브러리 전체를 실험 전(또는 후)에 *in silico*로 점수 �
 ## 설치 뿌뿡
 
 ```bash
-python -m pip install git+https://github.com/CleanCham-lab/VCFART.git
-# 또는
-git clone https://github.com/CleanCham-lab/VCFART.git
-cd VCFART && python -m pip install -e .
+python -m pip install vcfart
 vcfart --version
+
+# 개발 버전
+python -m pip install git+https://github.com/CleanCham-lab/VCFART.git
 ```
 
 ## 🚀 바로 해보기 (10초, 내장 demo genome)
 
 ```bash
-cd examples
+git clone https://github.com/CleanCham-lab/VCFART.git && cd VCFART/examples
 ./run_demo.sh          # examples/out/ 에 *.vcf / *.tsv / *.oligos.fa 생성
 ```
 

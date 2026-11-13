@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="logo/logo_dark.png">
-    <img src="logo/logo.png" alt="VCFART" width="640">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/CleanCham-lab/VCFART/main/logo/logo_dark.png">
+    <img src="https://raw.githubusercontent.com/CleanCham-lab/VCFART/main/logo/logo.png" alt="VCFART" width="640">
   </picture>
 </p>
 
@@ -11,13 +11,13 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/python-3.8%2B-blue" alt="python">
+  <img src="https://img.shields.io/badge/python-3.9%2B-blue" alt="python">
   <img src="https://img.shields.io/badge/dependencies-none-brightgreen" alt="no dependencies">
   <img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="MIT">
   <a href="https://cleancham-lab.github.io/VCFART/"><img src="https://img.shields.io/badge/homepage-%F0%9F%92%A8%20vcfart-523f85" alt="homepage"></a>
 </p>
 
-**English** | [한국어](README.ko.md) | [Homepage](https://cleancham-lab.github.io/VCFART/)
+**English** | [한국어](https://github.com/CleanCham-lab/VCFART/blob/main/README.ko.md) | [Homepage](https://cleancham-lab.github.io/VCFART/)
 
 ---
 
@@ -36,7 +36,7 @@ It writes:
 The VCF goes straight into **SpliceAI, ANNOVAR, VEP, CADD, AlphaMissense lookups, bcftools** …
 so you can score a whole MAVE library *in silico* before (or after) the wet lab.
 
-<p align="center"><img src="docs/terminal.png" alt="VCFART run in a terminal" width="760"></p>
+<p align="center"><img src="https://raw.githubusercontent.com/CleanCham-lab/VCFART/main/docs/terminal.png" alt="VCFART run in a terminal" width="760"></p>
 
 ### ✨ Features
 
@@ -62,7 +62,7 @@ so you can score a whole MAVE library *in silico* before (or after) the wet lab.
   `refGene` / `ncbiRefSeq` tables; RefSeq or GENCODE GTF (ENST IDs). `chr16` vs `16` naming is matched automatically.
 - **Safety checks** — warns when the CDS does not start with ATG / end with a stop or when introns lack
   GT-AG motifs (= genome build and annotation do not match).
-- **Zero dependencies** — pure Python ≥ 3.8 standard library; reads/creates the `.fai` index itself.
+- **Zero dependencies** — pure Python ≥ 3.9 standard library; reads/creates the `.fai` index itself.
 - **Readable runs** — MultiQC-style coloured log with a consequence bar chart; colour turns off when
   piped, with `--no-color` or `NO_COLOR=1`.
 
@@ -71,17 +71,17 @@ so you can score a whole MAVE library *in silico* before (or after) the wet lab.
 ## 📦 Install
 
 ```bash
-python -m pip install git+https://github.com/CleanCham-lab/VCFART.git
-# or
-git clone https://github.com/CleanCham-lab/VCFART.git
-cd VCFART && python -m pip install -e .
+python -m pip install vcfart
 vcfart --version
+
+# development version
+python -m pip install git+https://github.com/CleanCham-lab/VCFART.git
 ```
 
 ## 🚀 Quick start (10 seconds, bundled demo genome)
 
 ```bash
-cd examples
+git clone https://github.com/CleanCham-lab/VCFART.git && cd VCFART/examples
 ./run_demo.sh          # writes examples/out/*.vcf / *.tsv / *.oligos.fa
 ```
 
