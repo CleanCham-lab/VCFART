@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VCFART — every variant of a transcript region, as a VCF</title>
+<meta name="description" content="VCFART turns HGVS ranges into a sorted, normalized VCF of every SNV, indel or codon swap for MAVE, saturation genome editing, DMS and SpliceAI scans.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%92%A8%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,100..900&family=IBM+Plex+Mono:wght@400;600&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#ffffff;
+  --ink:#000000;
+  --puff:#523f85;
+  --muted:#5f5b68;
+  --rule:#e4e0ec;
+  --tint:#f4f2f9;
+  --l1:#e6e3ec; --l2:#46a758; --l3:#2f8fdd; --l4:#f5a524; --l5:#e5484d;
+  --term:#17131f; --termbar:#231d2e;
+  --sans:"Archivo","Noto Sans KR",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.55;font-variation-settings:"wdth" 100}
+html[data-lang="ko"] [data-l="en"],html:not([data-lang="ko"]) [data-l="ko"]{display:none!important}
+html[data-lang="ko"] body{word-break:keep-all}
+a{color:var(--puff);text-underline-offset:.18em}
+a:hover{color:var(--ink)}
+:focus-visible{outline:2px solid var(--puff);outline-offset:2px}
+code,kbd,pre{font-family:var(--mono)}
+code{font-size:.88em;background:var(--tint);padding:.08em .32em;border-radius:3px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 28px}
+
+/* header */
+.top{border-bottom:1px solid var(--rule)}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px;min-height:76px}
+.top img{height:46px;width:auto;display:block}
+.nav{display:flex;align-items:center;gap:22px;font-size:15px}
+.nav a{color:var(--ink);text-decoration:none}
+.nav a:hover{color:var(--puff);text-decoration:underline}
+.lang{display:flex;border:1px solid var(--ink);border-radius:4px;overflow:hidden}
+.lang button{font:inherit;font-size:14px;padding:5px 11px;border:0;background:var(--paper);color:var(--ink);cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+
+/* hero */
+.hero{padding:72px 0 28px}
+h1{font-weight:830;font-variation-settings:"wdth" 114;font-size:clamp(2.45rem,5.4vw,4.55rem);line-height:1.0;letter-spacing:-.018em;margin:0 0 30px;max-width:15.5em}
+h1 span.l2{display:block;color:var(--puff)}
+html[data-lang="ko"] h1{font-weight:900;letter-spacing:-.03em;line-height:1.12}
+.lede{font-size:1.18rem;max-width:40em;margin:0 0 30px}
+.install{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px;margin-bottom:8px}
+.cmd{display:flex;align-items:center;background:var(--tint);border-radius:5px;padding:0 0 0 16px;max-width:100%;overflow:hidden}
+.cmd pre{margin:0;padding:13px 14px 13px 0;font-size:14.5px;overflow-x:auto;white-space:pre}
+.cmd pre::before{content:"$ ";color:var(--muted)}
+.btn{font:inherit;font-size:15px;font-weight:600;border-radius:5px;padding:0 18px;min-height:46px;display:inline-flex;align-items:center;cursor:pointer;text-decoration:none}
+.btn.dark{background:var(--ink);color:var(--paper);border:1px solid var(--ink)}
+.btn.dark:hover{background:var(--puff);border-color:var(--puff);color:var(--paper)}
+.btn.line{background:var(--paper);color:var(--ink);border:1px solid var(--ink)}
+.btn.line:hover{color:var(--puff);border-color:var(--puff)}
+.cmd .btn{border-radius:0;min-height:100%;align-self:stretch}
+
+/* variant map */
+.mapsec{padding:46px 0 10px}
+.mapcap{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:6px 24px;margin-bottom:14px}
+.mapcap h2{font-size:1.05rem;font-weight:700;font-variation-settings:"wdth" 100;margin:0}
+.mapcap p{margin:0;color:var(--muted);font-size:15px}
+.scroller{overflow-x:auto;padding:4px 2px 10px}
+.map{display:grid;gap:2px;min-width:calc(2rem + var(--n) * 11px)}
+.map .row{display:contents}
+.map .lab{font-family:var(--mono);font-size:12px;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.map .refc{font-family:var(--mono);font-size:11.5px;text-align:center;line-height:20px;color:var(--muted);border-radius:2px}
+.map .refc.hot{background:var(--ink);color:var(--paper)}
+.cell{height:24px;border-radius:2px;background:var(--l1);cursor:crosshair;transform-origin:50% 60%}
+.cell.v1{background:var(--l1)}.cell.v2{background:var(--l2)}.cell.v3{background:var(--l3)}.cell.v4{background:var(--l4)}.cell.v5{background:var(--l5)}
+.cell.wt{background:var(--paper);box-shadow:inset 0 0 0 1px var(--rule);cursor:default}
+.cell:focus{outline:none}
+.cell.sel{outline:2px solid var(--puff);outline-offset:1px;position:relative;z-index:1}
+.cell.v5.sel,.cell.v4.sel{outline-color:var(--puff)}
+.map .edge{box-shadow:-3px 0 0 -1px var(--paper),-4px 0 0 -1px var(--ink)}
+.map .cell.wt.edge{box-shadow:inset 0 0 0 1px var(--rule),-3px 0 0 -1px var(--paper),-4px 0 0 -1px var(--ink)}
+.model{display:grid;gap:2px;margin-top:10px;min-width:calc(2rem + var(--n) * 11px)}
+.seg{position:relative;height:30px}
+.seg.intron::before{content:"";position:absolute;left:0;right:0;top:7px;height:2px;background:var(--ink)}
+.seg.exon::before{content:"";position:absolute;left:0;right:0;top:0;height:16px;background:var(--ink);border-radius:2px}
+.seg span{position:absolute;top:17px;left:0;font-size:13px;white-space:nowrap;color:var(--ink)}
+.ends{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12px;color:var(--muted);margin-left:2rem;min-width:calc(var(--n) * 11px)}
+.puffin .cell{animation:puff .42s cubic-bezier(.2,1.6,.4,1) both;animation-delay:calc(var(--i) * 9ms)}
+@keyframes puff{from{opacity:0;transform:scale(.25)}to{opacity:1;transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.puffin .cell{animation:none}}
+
+.readout{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 28px;margin:22px 0 0;padding:18px 0 0;border-top:1px solid var(--rule)}
+.readout div{min-width:0}
+.readout dt{font-size:13px;color:var(--muted);margin-bottom:2px}
+.readout dd{margin:0;font-family:var(--mono);font-size:15px;font-weight:600;overflow-wrap:anywhere}
+.legend{display:flex;flex-wrap:wrap;gap:8px 22px;margin:18px 0 0;padding:0;list-style:none;font-size:14px;color:var(--muted)}
+.legend li{display:flex;align-items:center;gap:8px}
+.legend i{display:inline-block;width:22px;height:14px;border-radius:2px}
+
+/* sections */
+section.block{padding:84px 0 0}
+h2.sec{font-weight:800;font-variation-settings:"wdth" 110;font-size:clamp(1.65rem,2.8vw,2.2rem);line-height:1.1;letter-spacing:-.01em;margin:0 0 12px}
+html[data-lang="ko"] h2.sec{font-weight:900;letter-spacing:-.02em}
+.intro{max-width:40em;color:var(--muted);margin:0 0 30px}
+.files{display:grid;grid-template-columns:minmax(0,15rem) minmax(0,1fr);gap:28px 36px;align-items:start}
+.files h3{font-family:var(--mono);font-size:15px;font-weight:600;margin:0 0 6px}
+.files p{margin:0;font-size:15.5px;color:var(--muted)}
+pre.snip{margin:0;background:var(--tint);border-radius:5px;padding:14px 16px;font-size:13px;line-height:1.6;overflow-x:auto;white-space:pre}
+pre.snip mark{background:var(--puff);color:var(--paper);border-radius:2px;padding:0 1px}
+pre.snip .dim{color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:15.5px}
+th{text-align:left;font-weight:600;font-size:14px;color:var(--muted);padding:0 18px 10px 0;border-bottom:2px solid var(--ink)}
+td{padding:13px 18px 13px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+td:first-child{white-space:nowrap}
+td code{white-space:nowrap}
+.num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.tablewrap{overflow-x:auto}
+dl.gens{display:grid;grid-template-columns:minmax(0,17rem) minmax(0,1fr);gap:0;margin:0}
+dl.gens dt,dl.gens dd{padding:15px 0;border-bottom:1px solid var(--rule);margin:0}
+dl.gens dt{font-family:var(--mono);font-size:14.5px;font-weight:600;padding-right:24px}
+ol.steps{list-style:none;counter-reset:s;margin:0;padding:0;display:grid;gap:26px}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:2.6rem minmax(0,1fr);gap:0 10px}
+ol.steps li::before{content:counter(s);font-weight:830;font-variation-settings:"wdth" 114;font-size:1.6rem;line-height:1.1;color:var(--puff)}
+ol.steps p{margin:0 0 8px;font-weight:600}
+.emo{font-weight:400;margin-right:.32em;font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif}
+h1 .emo{margin:0 0 0 .08em;font-size:.82em}
+.term{background:var(--term);border-radius:12px;overflow:hidden;box-shadow:0 22px 60px -18px rgba(82,63,133,.55)}
+.termbar{height:34px;background:var(--termbar);display:flex;align-items:center;gap:8px;padding:0 14px}
+.termbar i{width:12px;height:12px;border-radius:50%;background:#ff5f57}
+.termbar i:nth-child(2){background:#febc2e}.termbar i:nth-child(3){background:#28c840}
+.term pre{margin:0;padding:18px 22px 22px;color:#e8e4f0;font-size:13px;line-height:1.32;overflow-x:auto}
+footer{margin-top:110px;border-top:1px solid var(--rule);padding:30px 0 50px;font-size:15px;color:var(--muted)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px 30px}
+footer p{margin:0}
+footer .ppung{color:var(--puff);font-weight:700}
+
+@media (max-width:760px){
+  body{font-size:16px}
+  .wrap{padding:0 18px}
+  .top img{height:36px}
+  .nav{gap:14px}
+  .nav a.hide-s{display:none}
+  .hero{padding-top:44px}
+  .readout{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .files,dl.gens{grid-template-columns:minmax(0,1fr)}
+  .files{gap:10px}
+  .files pre.snip{margin-bottom:18px}
+  dl.gens dt{border-bottom:0;padding-bottom:2px}
+  dl.gens dd{padding-top:0}
+  td:first-child{white-space:normal}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a href="./" aria-label="VCFART home"><img src="logo.png" alt="VCFART" width="900" height="305"></a>
+    <nav class="nav" aria-label="Site">
+      <a class="hide-s" href="https://github.com/CleanCham-lab/VCFART#readme"><span data-l="en">Documentation</span><span data-l="ko">문서</span></a>
+      <a href="https://github.com/CleanCham-lab/VCFART">GitHub</a>
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" data-set="en" aria-pressed="true">EN</button>
+        <button type="button" data-set="ko" aria-pressed="false">한국어</button>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <h1>
+      <span data-l="en">Give it a transcript and a range. <span class="l2">It blows out every variant. <span class="emo" aria-hidden="true">💨</span></span></span>
+      <span data-l="ko">전사체와 구간만 주세요. <span class="l2">가능한 변이를 전부 뿜어냅니다. <span class="emo" aria-hidden="true">💨</span></span></span>
+    </h1>
+    <p class="lede" data-l="en">VCFART reads HGVS ranges such as <code>c.5075-100_c.5152+100</code>, follows the transcript on your hg19 or hg38 FASTA, and writes every SNV, indel or codon swap as a sorted, normalized VCF that SpliceAI, ANNOVAR and VEP take as is.</p>
+    <p class="lede" data-l="ko">VCFART는 <code>c.5075-100_c.5152+100</code> 같은 HGVS 구간을 읽고, hg19·hg38 FASTA 위에서 전사체를 따라가며, 가능한 모든 SNV·indel·코돈 치환을 정렬·정규화된 VCF로 씁니다. SpliceAI, ANNOVAR, VEP에 그대로 넣으면 됩니다.</p>
+    <div class="install">
+      <div class="cmd"><pre id="pipcmd">python -m pip install git+https://github.com/CleanCham-lab/VCFART.git</pre><button type="button" class="btn dark" id="copy"><span data-l="en">Copy</span><span data-l="ko">복사</span></button></div>
+      <a class="btn line" href="https://github.com/CleanCham-lab/VCFART"><span data-l="en">Source on GitHub</span><span data-l="ko">GitHub에서 보기</span></a>
+    </div>
+  </div>
+
+  <div class="wrap mapsec" aria-labelledby="maptitle">
+    <div class="mapcap">
+      <h2 id="maptitle"></h2>
+      <p><span data-l="en">Hover a cell, or tab into the map and use the arrow keys.</span><span data-l="ko">칸 위에 마우스를 올리거나, Tab으로 들어가 화살표 키로 움직여 보세요.</span></p>
+    </div>
+    <div class="scroller">
+      <div class="map" id="map" role="grid" aria-label="Variant map"></div>
+      <div class="model" id="model" aria-hidden="true"></div>
+      <div class="ends" id="ends" aria-hidden="true"><span></span><span></span></div>
+    </div>
+    <dl class="readout" aria-live="polite">
+      <div><dt>HGVS c.</dt><dd id="r-c">&nbsp;</dd></div>
+      <div><dt>HGVS p.</dt><dd id="r-p">&nbsp;</dd></div>
+      <div><dt>Consequence</dt><dd id="r-q">&nbsp;</dd></div>
+      <div><dt><span data-l="en">VCF record</span><span data-l="ko">VCF 레코드</span></dt><dd id="r-v">&nbsp;</dd></div>
+    </dl>
+    <ul class="legend" aria-label="Colour key">
+      <li><i style="background:var(--l5)"></i><span data-l="en">splice site, stop gained, start or stop lost</span><span data-l="ko">splice site, stop gained, start/stop lost</span></li>
+      <li><i style="background:var(--l4)"></i><span data-l="en">missense</span><span data-l="ko">missense</span></li>
+      <li><i style="background:var(--l3)"></i><span data-l="en">splice region</span><span data-l="ko">splice region</span></li>
+      <li><i style="background:var(--l2)"></i><span data-l="en">synonymous</span><span data-l="ko">동의 변이</span></li>
+      <li><i style="background:var(--l1)"></i><span data-l="en">intron, UTR</span><span data-l="ko">인트론, UTR</span></li>
+      <li><i style="background:var(--paper);box-shadow:inset 0 0 0 1px var(--rule)"></i><span data-l="en">reference base</span><span data-l="ko">reference 염기</span></li>
+    </ul>
+  </div>
+
+  <section class="block wrap" aria-labelledby="s-run">
+    <h2 class="sec" id="s-run"><span class="emo" aria-hidden="true">🖥️</span><span data-l="en">What a run looks like</span><span data-l="ko">실행하면 이렇게 나옵니다</span></h2>
+    <p class="intro"><span data-l="en">Every step is logged with what it found, and the consequences come back as a coloured bar chart before the files are written. Colour switches off when you pipe the output or set <code>NO_COLOR</code>.</span><span data-l="ko">단계마다 찾은 내용을 보여주고, 파일을 쓰기 전에 consequence 분포를 색깔 막대그래프로 보여줍니다. 출력을 파이프로 넘기거나 <code>NO_COLOR</code>를 설정하면 색은 꺼집니다.</span></p>
+    <div class="term"><div class="termbar" aria-hidden="true"><i></i><i></i><i></i></div><pre><!--TERM--><span style="color:#8a8a8a">$</span> vcfart generate -f demo.fa -a demo_refGene.txt -t NM_DEMO.1 -r ex3=exon3:30 -m snv,del,ins -o out/demo_ex3
+<span style="color:#af87ff"> ██╗   ██╗ ██████╗███████╗ █████╗ ██████╗ ████████╗</span>
+<span style="color:#af87ff"> ██║   ██║██╔════╝██╔════╝██╔══██╗██╔══██╗╚══██╔══╝</span>
+<span style="color:#af5fff"> ██║   ██║██║     █████╗  ███████║██████╔╝   ██║</span>
+<span style="color:#875fd7"> ╚██╗ ██╔╝██║     ██╔══╝  ██╔══██║██╔══██╗   ██║</span>
+<span style="color:#875faf">  ╚████╔╝ ╚██████╗██║     ██║  ██║██║  ██║   ██║</span>
+<span style="color:#5f5faf">   ╚═══╝   ╚═════╝╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝   ╚═╝</span>
+   <span style="font-weight:700;color:#af87ff">💨 뿌뿡</span><span style="color:#8a8a8a">  artificial VCFs for MAVE / SGE / DMS</span>   <span style="color:#875fd7">v1.0.0</span>
+
+<span style="color:#875fd7">   reference</span> <span style="color:#8a8a8a">|</span> 🧬 demo.fa
+<span style="color:#875fd7">  annotation</span> <span style="color:#8a8a8a">|</span> 📚 demo_refGene.txt
+<span style="color:#875fd7">  transcript</span> <span style="color:#8a8a8a">|</span> 📍 <span style="font-weight:700">NM_DEMO.1 DEMO1</span>  chrDemo:501-2,843 (-)  5 exons  CDS 603 bp
+<span style="color:#875fd7">      region</span> <span style="color:#8a8a8a">|</span> 🎯 <span style="font-weight:700;color:#875fd7">ex3</span>  c.181-30_342+30  chrDemo:1,752-1,973  222 bp  <span style="color:#8a8a8a">intron2 → intron3</span>
+<span style="color:#875fd7">    generate</span> <span style="color:#8a8a8a">|</span> 💨 1,772 raw edits → <span style="font-weight:700">1,487 unique variants</span>
+<span style="color:#875fd7">       types</span> <span style="color:#8a8a8a">|</span> 🧪 <span style="font-weight:700;color:#af87ff">SNV</span> 666   <span style="font-weight:700;color:#5faf5f">INS</span> 664   <span style="font-weight:700;color:#ffaf00">DEL</span> 157
+<span style="color:#875fd7"> consequence</span> <span style="color:#8a8a8a">|</span> 📊 frameshift_variant                  <span style="color:#ff5f5f">██████████████████████</span> 581
+<span style="color:#875fd7">            </span> <span style="color:#8a8a8a">|</span>    missense_variant                    <span style="color:#ffaf00">█████████████</span> 348
+<span style="color:#875fd7">            </span> <span style="color:#8a8a8a">|</span>    intron_variant                      <span style="color:#8a8a8a">█████████</span> 227
+<span style="color:#875fd7">            </span> <span style="color:#8a8a8a">|</span>    synonymous_variant                  <span style="color:#5faf5f">████</span> 118
+<span style="color:#875fd7">            </span> <span style="color:#8a8a8a">|</span>    splice_region_variant               <span style="color:#00afff">███</span> 87
+<span style="color:#875fd7">            </span> <span style="color:#8a8a8a">|</span>    splice_polypyrimidine_tract_variant <span style="color:#00afff">██</span> 56
+<span style="color:#875fd7">            </span> <span style="color:#8a8a8a">|</span>    stop_gained                         <span style="color:#ff5f5f">█</span> 38
+<span style="color:#875fd7">            </span> <span style="color:#8a8a8a">|</span>    splice_donor_variant                <span style="color:#ff5f5f">█</span> 11
+<span style="color:#875fd7">            </span> <span style="color:#8a8a8a">|</span>    splice_acceptor_variant             <span style="color:#ff5f5f">█</span> 11
+<span style="color:#875fd7">            </span> <span style="color:#8a8a8a">|</span>    splice_donor_5th_base_variant       <span style="color:#00afff">█</span> 10
+<span style="color:#875fd7">       write</span> <span style="color:#8a8a8a">|</span> 💾 out/demo_ex3.vcf
+<span style="color:#875fd7">            </span> <span style="color:#8a8a8a">|</span> 💾 out/demo_ex3.tsv
+
+  <span style="font-weight:700;color:#af87ff">💨 뿌뿡!</span>  <span style="font-weight:700">1,487 variants</span><span style="color:#8a8a8a"> → </span>out/demo_ex3.vcf<!--/TERM--></pre></div>
+  </section>
+
+  <section class="block wrap" aria-labelledby="s-out">
+    <h2 class="sec" id="s-out"><span class="emo" aria-hidden="true">📦</span><span data-l="en">What comes out</span><span data-l="ko">출력 파일</span></h2>
+    <p class="intro"><span data-l="en">Three plain-text files per run, shown here exactly as VCFART wrote them for the map above.</span><span data-l="ko">실행할 때마다 텍스트 파일 세 개가 나옵니다. 아래는 위 지도를 만들 때 VCFART가 쓴 그대로입니다.</span></p>
+    <div class="files">
+      <div>
+        <h3>PREFIX.vcf</h3>
+        <p data-l="en">Every variant, sorted and left-normalized, REF checked against your FASTA. The ID column carries the c. description.</p>
+        <p data-l="ko">모든 변이를 정렬하고 left-normalize하며, REF는 FASTA로 확인합니다. ID 열에 c. 표기가 들어갑니다.</p>
+      </div>
+<pre class="snip"><span class="dim">#CHROM  POS   ID          REF ALT ... INFO</span>
+chrDemo 1944  <mark>c.181-1G&gt;A</mark>  C   T   ... VA_HGVSc=c.181-1G&gt;A;VA_CSQ=splice_acceptor_variant&amp;intron_variant;
+                                    VA_REGION=intron2;VA_TYPE=SNV;VA_ORIGIN=snv;VA_SET=ex3</pre>
+      <div>
+        <h3>PREFIX.tsv</h3>
+        <p data-l="en">One row per variant: HGVS c., predicted HGVS p., consequence, exon or intron, and which range produced it.</p>
+        <p data-l="ko">변이 한 줄씩: HGVS c., 예측 HGVS p., consequence, 엑손/인트론 위치, 어느 구간에서 나왔는지.</p>
+      </div>
+<pre class="snip"><span class="dim">set  pos   ref alt hgvs_c                 hgvs_p      consequence       region</span>
+ex3  1936  G   A   NM_DEMO.1:c.188C&gt;T     <mark>p.Pro63Leu</mark>  missense_variant  exon3</pre>
+      <div>
+        <h3>PREFIX.oligos.fa</h3>
+        <p data-l="en">With <code>--oligo</code>: the mutant window for each variant in transcript orientation, with your adapters attached.</p>
+        <p data-l="ko"><code>--oligo</code>를 주면: 변이마다 transcript 방향의 mutant 서열, 어댑터까지 붙여서.</p>
+      </div>
+<pre class="snip">&gt;ex3|WT
+<span class="dim">…</span>CTTTTCCTTTTTTTTCTCCAGACAACCCCCCCCATTTACGA<span class="dim">…</span>
+&gt;ex3|c.181-1G&gt;A
+<span class="dim">…</span>CTTTTCCTTTTTTTTCTCCA<mark>A</mark>ACAACCCCCCCCATTTACGA<span class="dim">…</span></pre>
+    </div>
+  </section>
+
+  <section class="block wrap" aria-labelledby="s-ranges">
+    <h2 class="sec" id="s-ranges"><span class="emo" aria-hidden="true">✍️</span><span data-l="en">Ranges, written the way you already write them</span><span data-l="ko">구간은 평소 쓰던 대로</span></h2>
+    <p class="intro"><span data-l="en">BRCA1, NM_007294.4, hg38. Exon numbers follow the transcript model in your annotation file.</span><span data-l="ko">BRCA1, NM_007294.4, hg38 기준. 엑손 번호는 annotation 파일의 전사체 모델을 따릅니다.</span></p>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th><span data-l="en">You type</span><span data-l="ko">입력</span></th><th><span data-l="en">VCFART reads</span><span data-l="ko">VCFART가 읽는 구간</span></th></tr></thead>
+      <tbody>
+        <tr><td><code>-r c.5075-100_c.5152+100</code></td><td>chr17:43,063,774–43,064,051 <span data-l="en">(278 bp: intron 16, exon 17, intron 17)</span><span data-l="ko">(278 bp: 인트론 16, 엑손 17, 인트론 17)</span></td></tr>
+        <tr><td><code>-r exon17:100</code></td><td><span data-l="en">the same 278 bp: exon 17 plus 100 bp on each side</span><span data-l="ko">같은 278 bp: 엑손 17 + 양쪽 100 bp</span></td></tr>
+        <tr><td><code>-r int16=c.5075-100_c.5075-1</code></td><td><span data-l="en">the 3′ end of intron 16, labelled <code>int16</code> in the output</span><span data-l="ko">인트론 16의 3′ 끝, 출력에 <code>int16</code> 라벨로 표시</span></td></tr>
+        <tr><td><code>-r c.5075-1</code></td><td>chr17:43,063,952 <span data-l="en">(the splice acceptor of exon 17)</span><span data-l="ko">(엑손 17의 splice acceptor)</span></td></tr>
+        <tr><td><code>-r cds --exonic-only</code></td><td><span data-l="en">every coding base from c.1 to the stop codon, introns left out</span><span data-l="ko">c.1부터 stop codon까지 코딩 염기만, 인트론 제외</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="block wrap" aria-labelledby="s-gen">
+    <h2 class="sec" id="s-gen"><span class="emo" aria-hidden="true">🧪</span><span data-l="en">Four ways to mutate</span><span data-l="ko">변이를 만드는 네 가지 방법</span></h2>
+    <p class="intro"><span data-l="en">Combine them in one run, for example <code>-m snv,del,codon</code>. Variants that are the same at the sequence level are written once.</span><span data-l="ko">한 번에 섞어 쓸 수 있습니다(예: <code>-m snv,del,codon</code>). 서열상 같은 변이는 한 번만 기록됩니다.</span></p>
+    <dl class="gens">
+      <dt>-m snv</dt><dd><span data-l="en">All three alternative bases at every position. This is the default.</span><span data-l="ko">모든 위치에서 나머지 염기 3개로 치환합니다. 기본값입니다.</span></dd>
+      <dt>-m del --del-sizes 1,3</dt><dd><span data-l="en">Deletions of the lengths you list. Deleting any C of a CCCCCC run gives one record, named by the 3′ rule.</span><span data-l="ko">지정한 길이의 결실. CCCCCC 중 어느 C를 지워도 한 줄로 합쳐지고, 3′ rule로 이름 붙습니다.</span></dd>
+      <dt>-m ins --ins-sizes 1</dt><dd><span data-l="en">Every k-mer inserted between every pair of bases. Insertions that copy the neighbouring sequence are reported as dup.</span><span data-l="ko">모든 염기 사이에 가능한 모든 k-mer 삽입. 옆 서열을 복제하는 삽입은 dup으로 표기됩니다.</span></dd>
+      <dt>-m codon</dt><dd><span data-l="en">Deep-mutational-scanning codon swaps: one codon per amino acid plus Ter and a synonymous control, all 63 codons, or NNK.</span><span data-l="ko">DMS 방식 코돈 치환: 아미노산마다 코돈 하나 + Ter + 동의 코돈 대조군, 63개 전부, 또는 NNK.</span></dd>
+    </dl>
+  </section>
+
+  <section class="block wrap" aria-labelledby="s-val">
+    <h2 class="sec" id="s-val"><span class="emo" aria-hidden="true">✅</span><span data-l="en">Checked against real data</span><span data-l="ko">실제 데이터로 검증</span></h2>
+    <p class="intro"><span data-l="en">Run on hg38 with the ANNOVAR <code>hg38_refGene.txt</code> transcript table.</span><span data-l="ko">hg38과 ANNOVAR <code>hg38_refGene.txt</code> 전사체 테이블로 실행했습니다.</span></p>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th><span data-l="en">Target</span><span data-l="ko">대상</span></th><th><span data-l="en">Variants</span><span data-l="ko">변이 수</span></th><th><span data-l="en">Result</span><span data-l="ko">결과</span></th></tr></thead>
+      <tbody>
+        <tr><td><span data-l="en">444-bp intron–exon–intron target, minus-strand gene</span><span data-l="ko">444 bp 인트론–엑손–인트론 구간, minus strand 유전자</span></td><td class="num">1,332 SNVs</td><td><span data-l="en">Positions, alleles and c. labels identical to the authors’ original in-house MAVE scripts</span><span data-l="ko">기존 in-house MAVE 스크립트와 위치, 염기, c. 표기 모두 동일</span></td></tr>
+        <tr><td><span data-l="en">DRC1 coding sequence, NM_145038, plus strand</span><span data-l="ko">DRC1 코딩 서열, NM_145038, plus strand</span></td><td class="num">6,669 SNVs</td><td><span data-l="en">c. and p. identical to ANNOVAR refGene for all 6,669, including start and stop changes</span><span data-l="ko">6,669개 전부 ANNOVAR refGene과 c./p. 일치(start·stop 변화 포함)</span></td></tr>
+        <tr><td><span data-l="en">Test suite: synthetic genes on both strands, indel normalization, protein edge cases</span><span data-l="ko">테스트: 양쪽 strand 합성 유전자, indel 정규화, 단백질 예외 사례</span></td><td class="num">49 tests</td><td><span data-l="en">All pass</span><span data-l="ko">모두 통과</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </section>
+
+  <section class="block wrap" aria-labelledby="s-start">
+    <h2 class="sec" id="s-start"><span class="emo" aria-hidden="true">🚀</span><span data-l="en">Start in four commands</span><span data-l="ko">명령 네 개로 시작하기</span></h2>
+    <p class="intro"><span data-l="en">Python 3.8 or newer, nothing else to install. Your FASTA gets a <code>.fai</code> index on first use if it has none.</span><span data-l="ko">Python 3.8 이상이면 끝, 다른 설치는 없습니다. FASTA에 <code>.fai</code>가 없으면 처음 실행할 때 만듭니다.</span></p>
+    <ol class="steps">
+      <li><div><p><span data-l="en">Install</span><span data-l="ko">설치</span></p><pre class="snip">python -m pip install git+https://github.com/CleanCham-lab/VCFART.git</pre></div></li>
+      <li><div><p><span data-l="en">Look up the transcript</span><span data-l="ko">전사체 확인</span></p><pre class="snip">vcfart info -f hg38.fa -a humandb/hg38_refGene.txt -t NM_007294.4</pre></div></li>
+      <li><div><p><span data-l="en">Generate the variants</span><span data-l="ko">변이 생성</span></p><pre class="snip">vcfart generate -f hg38.fa -a humandb/hg38_refGene.txt -t NM_007294.4 \
+    -r exon17:100 -m snv,del -o BRCA1_ex17</pre></div></li>
+      <li><div><p><span data-l="en">Score them</span><span data-l="ko">점수 매기기</span></p><pre class="snip">spliceai -I BRCA1_ex17.vcf -O BRCA1_ex17.spliceai.vcf -R hg38.fa -A grch38</pre></div></li>
+    </ol>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><span data-l="en">Made by Seung Won Chae, Molecular Diagnostics Laboratory, Department of Laboratory Medicine, Seoul National University Hospital.</span><span data-l="ko">채승원, 서울대학교병원 진단검사의학과 분자진단검사실.</span></p>
+    <p><span data-l="en">MIT license. Cite it with <a href="https://github.com/CleanCham-lab/VCFART/blob/main/CITATION.cff">CITATION.cff</a>.</span><span data-l="ko">MIT 라이선스. 인용은 <a href="https://github.com/CleanCham-lab/VCFART/blob/main/CITATION.cff">CITATION.cff</a>로.</span> <span class="ppung">뿌뿡 💨</span></p>
+  </div>
+</footer>
+
+<script>
+const MAP = /*MAP-DATA*/{"title":"demo","tx":"NM_DEMO.1","gene":"DEMO1","cols":[{"c":"181-24","ref":"T","reg":"intron2","alts":{"G":["intron_variant","","chrDemo",1967,"A","C"],"C":["intron_variant","","chrDemo",1967,"A","G"],"A":["intron_variant","","chrDemo",1967,"A","T"]}},{"c":"181-23","ref":"T","reg":"intron2","alts":{"G":["intron_variant","","chrDemo",1966,"A","C"],"C":["intron_variant","","chrDemo",1966,"A","G"],"A":["intron_variant","","chrDemo",1966,"A","T"]}},{"c":"181-22","ref":"T","reg":"intron2","alts":{"G":["intron_variant","","chrDemo",1965,"A","C"],"C":["intron_variant","","chrDemo",1965,"A","G"],"A":["intron_variant","","chrDemo",1965,"A","T"]}},{"c":"181-21","ref":"C","reg":"intron2","alts":{"T":["intron_variant","","chrDemo",1964,"G","A"],"G":["intron_variant","","chrDemo",1964,"G","C"],"A":["intron_variant","","chrDemo",1964,"G","T"]}},{"c":"181-20","ref":"T","reg":"intron2","alts":{"G":["intron_variant","","chrDemo",1963,"A","C"],"C":["intron_variant","","chrDemo",1963,"A","G"],"A":["intron_variant","","chrDemo",1963,"A","T"]}},{"c":"181-19","ref":"T","reg":"intron2","alts":{"G":["intron_variant","","chrDemo",1962,"A","C"],"C":["intron_variant","","chrDemo",1962,"A","G"],"A":["intron_variant","","chrDemo",1962,"A","T"]}},{"c":"181-18","ref":"T","reg":"intron2","alts":{"G":["intron_variant","","chrDemo",1961,"A","C"],"C":["intron_variant","","chrDemo",1961,"A","G"],"A":["intron_variant","","chrDemo",1961,"A","T"]}},{"c":"181-17","ref":"T","reg":"intron2","alts":{"G":["splice_polypyrimidine_tract_variant","","chrDemo",1960,"A","C"],"C":["splice_polypyrimidine_tract_variant","","chrDemo",1960,"A","G"],"A":["splice_polypyrimidine_tract_variant","","chrDemo",1960,"A","T"]}},{"c":"181-16","ref":"C","reg":"intron2","alts":{"T":["splice_polypyrimidine_tract_variant","","chrDemo",1959,"G","A"],"G":["splice_polypyrimidine_tract_variant","","chrDemo",1959,"G","C"],"A":["splice_polypyrimidine_tract_variant","","chrDemo",1959,"G","T"]}},{"c":"181-15","ref":"C","reg":"intron2","alts":{"T":["splice_polypyrimidine_tract_variant","","chrDemo",1958,"G","A"],"G":["splice_polypyrimidine_tract_variant","","chrDemo",1958,"G","C"],"A":["splice_polypyrimidine_tract_variant","","chrDemo",1958,"G","T"]}},{"c":"181-14","ref":"T","reg":"intron2","alts":{"G":["splice_polypyrimidine_tract_variant","","chrDemo",1957,"A","C"],"C":["splice_polypyrimidine_tract_variant","","chrDemo",1957,"A","G"],"A":["splice_polypyrimidine_tract_variant","","chrDemo",1957,"A","T"]}},{"c":"181-13","ref":"T","reg":"intron2","alts":{"G":["splice_polypyrimidine_tract_variant","","chrDemo",1956,"A","C"],"C":["splice_polypyrimidine_tract_variant","","chrDemo",1956,"A","G"],"A":["splice_polypyrimidine_tract_variant","","chrDemo",1956,"A","T"]}},{"c":"181-12","ref":"T","reg":"intron2","alts":{"G":["splice_polypyrimidine_tract_variant","","chrDemo",1955,"A","C"],"C":["splice_polypyrimidine_tract_variant","","chrDemo",1955,"A","G"],"A":["splice_polypyrimidine_tract_variant","","chrDemo",1955,"A","T"]}},{"c":"181-11","ref":"T","reg":"intron2","alts":{"G":["splice_polypyrimidine_tract_variant","","chrDemo",1954,"A","C"],"C":["splice_polypyrimidine_tract_variant","","chrDemo",1954,"A","G"],"A":["splice_polypyrimidine_tract_variant","","chrDemo",1954,"A","T"]}},{"c":"181-10","ref":"T","reg":"intron2","alts":{"G":["splice_polypyrimidine_tract_variant","","chrDemo",1953,"A","C"],"C":["splice_polypyrimidine_tract_variant","","chrDemo",1953,"A","G"],"A":["splice_polypyrimidine_tract_variant","","chrDemo",1953,"A","T"]}},{"c":"181-9","ref":"T","reg":"intron2","alts":{"G":["splice_polypyrimidine_tract_variant","","chrDemo",1952,"A","C"],"C":["splice_polypyrimidine_tract_variant","","chrDemo",1952,"A","G"],"A":["splice_polypyrimidine_tract_variant","","chrDemo",1952,"A","T"]}},{"c":"181-8","ref":"T","reg":"intron2","alts":{"G":["splice_region_variant","","chrDemo",1951,"A","C"],"C":["splice_region_variant","","chrDemo",1951,"A","G"],"A":["splice_region_variant","","chrDemo",1951,"A","T"]}},{"c":"181-7","ref":"T","reg":"intron2","alts":{"G":["splice_region_variant","","chrDemo",1950,"A","C"],"C":["splice_region_variant","","chrDemo",1950,"A","G"],"A":["splice_region_variant","","chrDemo",1950,"A","T"]}},{"c":"181-6","ref":"C","reg":"intron2","alts":{"T":["splice_region_variant","","chrDemo",1949,"G","A"],"G":["splice_region_variant","","chrDemo",1949,"G","C"],"A":["splice_region_variant","","chrDemo",1949,"G","T"]}},{"c":"181-5","ref":"T","reg":"intron2","alts":{"G":["splice_region_variant","","chrDemo",1948,"A","C"],"C":["splice_region_variant","","chrDemo",1948,"A","G"],"A":["splice_region_variant","","chrDemo",1948,"A","T"]}},{"c":"181-4","ref":"C","reg":"intron2","alts":{"T":["splice_region_variant","","chrDemo",1947,"G","A"],"G":["splice_region_variant","","chrDemo",1947,"G","C"],"A":["splice_region_variant","","chrDemo",1947,"G","T"]}},{"c":"181-3","ref":"C","reg":"intron2","alts":{"T":["splice_region_variant","","chrDemo",1946,"G","A"],"G":["splice_region_variant","","chrDemo",1946,"G","C"],"A":["splice_region_variant","","chrDemo",1946,"G","T"]}},{"c":"181-2","ref":"A","reg":"intron2","alts":{"T":["splice_acceptor_variant","","chrDemo",1945,"T","A"],"G":["splice_acceptor_variant","","chrDemo",1945,"T","C"],"C":["splice_acceptor_variant","","chrDemo",1945,"T","G"]}},{"c":"181-1","ref":"G","reg":"intron2","alts":{"T":["splice_acceptor_variant","","chrDemo",1944,"C","A"],"C":["splice_acceptor_variant","","chrDemo",1944,"C","G"],"A":["splice_acceptor_variant","","chrDemo",1944,"C","T"]}},{"c":"181","ref":"A","reg":"exon3","alts":{"T":["missense_variant","p.Thr61Ser","chrDemo",1943,"T","A"],"G":["missense_variant","p.Thr61Ala","chrDemo",1943,"T","C"],"C":["missense_variant","p.Thr61Pro","chrDemo",1943,"T","G"]}},{"c":"182","ref":"C","reg":"exon3","alts":{"T":["missense_variant","p.Thr61Ile","chrDemo",1942,"G","A"],"G":["missense_variant","p.Thr61Arg","chrDemo",1942,"G","C"],"A":["missense_variant","p.Thr61Lys","chrDemo",1942,"G","T"]}},{"c":"183","ref":"A","reg":"exon3","alts":{"T":["splice_region_variant","p.Thr61=","chrDemo",1941,"T","A"],"G":["splice_region_variant","p.Thr61=","chrDemo",1941,"T","C"],"C":["splice_region_variant","p.Thr61=","chrDemo",1941,"T","G"]}},{"c":"184","ref":"A","reg":"exon3","alts":{"T":["missense_variant","p.Thr62Ser","chrDemo",1940,"T","A"],"G":["missense_variant","p.Thr62Ala","chrDemo",1940,"T","C"],"C":["missense_variant","p.Thr62Pro","chrDemo",1940,"T","G"]}},{"c":"185","ref":"C","reg":"exon3","alts":{"T":["missense_variant","p.Thr62Ile","chrDemo",1939,"G","A"],"G":["missense_variant","p.Thr62Ser","chrDemo",1939,"G","C"],"A":["missense_variant","p.Thr62Asn","chrDemo",1939,"G","T"]}},{"c":"186","ref":"C","reg":"exon3","alts":{"T":["synonymous_variant","p.Thr62=","chrDemo",1938,"G","A"],"G":["synonymous_variant","p.Thr62=","chrDemo",1938,"G","C"],"A":["synonymous_variant","p.Thr62=","chrDemo",1938,"G","T"]}},{"c":"187","ref":"C","reg":"exon3","alts":{"T":["missense_variant","p.Pro63Ser","chrDemo",1937,"G","A"],"G":["missense_variant","p.Pro63Ala","chrDemo",1937,"G","C"],"A":["missense_variant","p.Pro63Thr","chrDemo",1937,"G","T"]}},{"c":"188","ref":"C","reg":"exon3","alts":{"T":["missense_variant","p.Pro63Leu","chrDemo",1936,"G","A"],"G":["missense_variant","p.Pro63Arg","chrDemo",1936,"G","C"],"A":["missense_variant","p.Pro63His","chrDemo",1936,"G","T"]}},{"c":"189","ref":"C","reg":"exon3","alts":{"T":["synonymous_variant","p.Pro63=","chrDemo",1935,"G","A"],"G":["synonymous_variant","p.Pro63=","chrDemo",1935,"G","C"],"A":["synonymous_variant","p.Pro63=","chrDemo",1935,"G","T"]}},{"c":"190","ref":"C","reg":"exon3","alts":{"T":["missense_variant","p.Pro64Ser","chrDemo",1934,"G","A"],"G":["missense_variant","p.Pro64Ala","chrDemo",1934,"G","C"],"A":["missense_variant","p.Pro64Thr","chrDemo",1934,"G","T"]}},{"c":"191","ref":"C","reg":"exon3","alts":{"T":["missense_variant","p.Pro64Leu","chrDemo",1933,"G","A"],"G":["missense_variant","p.Pro64Arg","chrDemo",1933,"G","C"],"A":["missense_variant","p.Pro64His","chrDemo",1933,"G","T"]}},{"c":"192","ref":"C","reg":"exon3","alts":{"T":["synonymous_variant","p.Pro64=","chrDemo",1932,"G","A"],"G":["synonymous_variant","p.Pro64=","chrDemo",1932,"G","C"],"A":["synonymous_variant","p.Pro64=","chrDemo",1932,"G","T"]}},{"c":"193","ref":"A","reg":"exon3","alts":{"T":["missense_variant","p.Ile65Phe","chrDemo",1931,"T","A"],"G":["missense_variant","p.Ile65Val","chrDemo",1931,"T","C"],"C":["missense_variant","p.Ile65Leu","chrDemo",1931,"T","G"]}},{"c":"194","ref":"T","reg":"exon3","alts":{"G":["missense_variant","p.Ile65Ser","chrDemo",1930,"A","C"],"C":["missense_variant","p.Ile65Thr","chrDemo",1930,"A","G"],"A":["missense_variant","p.Ile65Asn","chrDemo",1930,"A","T"]}},{"c":"195","ref":"T","reg":"exon3","alts":{"G":["missense_variant","p.Ile65Met","chrDemo",1929,"A","C"],"C":["synonymous_variant","p.Ile65=","chrDemo",1929,"A","G"],"A":["synonymous_variant","p.Ile65=","chrDemo",1929,"A","T"]}},{"c":"196","ref":"T","reg":"exon3","alts":{"G":["missense_variant","p.Tyr66Asp","chrDemo",1928,"A","C"],"C":["missense_variant","p.Tyr66His","chrDemo",1928,"A","G"],"A":["missense_variant","p.Tyr66Asn","chrDemo",1928,"A","T"]}},{"c":"197","ref":"A","reg":"exon3","alts":{"T":["missense_variant","p.Tyr66Phe","chrDemo",1927,"T","A"],"G":["missense_variant","p.Tyr66Cys","chrDemo",1927,"T","C"],"C":["missense_variant","p.Tyr66Ser","chrDemo",1927,"T","G"]}},{"c":"198","ref":"C","reg":"exon3","alts":{"T":["synonymous_variant","p.Tyr66=","chrDemo",1926,"G","A"],"G":["stop_gained","p.Tyr66Ter","chrDemo",1926,"G","C"],"A":["stop_gained","p.Tyr66Ter","chrDemo",1926,"G","T"]}},{"c":"199","ref":"G","reg":"exon3","alts":{"T":["stop_gained","p.Glu67Ter","chrDemo",1925,"C","A"],"C":["missense_variant","p.Glu67Gln","chrDemo",1925,"C","G"],"A":["missense_variant","p.Glu67Lys","chrDemo",1925,"C","T"]}},{"c":"200","ref":"A","reg":"exon3","alts":{"T":["missense_variant","p.Glu67Val","chrDemo",1924,"T","A"],"G":["missense_variant","p.Glu67Gly","chrDemo",1924,"T","C"],"C":["missense_variant","p.Glu67Ala","chrDemo",1924,"T","G"]}},{"c":"201","ref":"G","reg":"exon3","alts":{"T":["missense_variant","p.Glu67Asp","chrDemo",1923,"C","A"],"C":["missense_variant","p.Glu67Asp","chrDemo",1923,"C","G"],"A":["synonymous_variant","p.Glu67=","chrDemo",1923,"C","T"]}},{"c":"202","ref":"A","reg":"exon3","alts":{"T":["missense_variant","p.Ser68Cys","chrDemo",1922,"T","A"],"G":["missense_variant","p.Ser68Gly","chrDemo",1922,"T","C"],"C":["missense_variant","p.Ser68Arg","chrDemo",1922,"T","G"]}},{"c":"203","ref":"G","reg":"exon3","alts":{"T":["missense_variant","p.Ser68Ile","chrDemo",1921,"C","A"],"C":["missense_variant","p.Ser68Thr","chrDemo",1921,"C","G"],"A":["missense_variant","p.Ser68Asn","chrDemo",1921,"C","T"]}},{"c":"204","ref":"T","reg":"exon3","alts":{"G":["missense_variant","p.Ser68Arg","chrDemo",1920,"A","C"],"C":["synonymous_variant","p.Ser68=","chrDemo",1920,"A","G"],"A":["missense_variant","p.Ser68Arg","chrDemo",1920,"A","T"]}},{"c":"205","ref":"G","reg":"exon3","alts":{"T":["missense_variant","p.Val69Phe","chrDemo",1919,"C","A"],"C":["missense_variant","p.Val69Leu","chrDemo",1919,"C","G"],"A":["missense_variant","p.Val69Ile","chrDemo",1919,"C","T"]}},{"c":"206","ref":"T","reg":"exon3","alts":{"G":["missense_variant","p.Val69Gly","chrDemo",1918,"A","C"],"C":["missense_variant","p.Val69Ala","chrDemo",1918,"A","G"],"A":["missense_variant","p.Val69Asp","chrDemo",1918,"A","T"]}},{"c":"207","ref":"T","reg":"exon3","alts":{"G":["synonymous_variant","p.Val69=","chrDemo",1917,"A","C"],"C":["synonymous_variant","p.Val69=","chrDemo",1917,"A","G"],"A":["synonymous_variant","p.Val69=","chrDemo",1917,"A","T"]}},{"c":"208","ref":"G","reg":"exon3","alts":{"T":["missense_variant","p.Val70Phe","chrDemo",1916,"C","A"],"C":["missense_variant","p.Val70Leu","chrDemo",1916,"C","G"],"A":["missense_variant","p.Val70Ile","chrDemo",1916,"C","T"]}},{"c":"209","ref":"T","reg":"exon3","alts":{"G":["missense_variant","p.Val70Gly","chrDemo",1915,"A","C"],"C":["missense_variant","p.Val70Ala","chrDemo",1915,"A","G"],"A":["missense_variant","p.Val70Asp","chrDemo",1915,"A","T"]}},{"c":"210","ref":"T","reg":"exon3","alts":{"G":["synonymous_variant","p.Val70=","chrDemo",1914,"A","C"],"C":["synonymous_variant","p.Val70=","chrDemo",1914,"A","G"],"A":["synonymous_variant","p.Val70=","chrDemo",1914,"A","T"]}},{"c":"211","ref":"A","reg":"exon3","alts":{"T":["missense_variant","p.Thr71Ser","chrDemo",1913,"T","A"],"G":["missense_variant","p.Thr71Ala","chrDemo",1913,"T","C"],"C":["missense_variant","p.Thr71Pro","chrDemo",1913,"T","G"]}},{"c":"212","ref":"C","reg":"exon3","alts":{"T":["missense_variant","p.Thr71Met","chrDemo",1912,"G","A"],"G":["missense_variant","p.Thr71Arg","chrDemo",1912,"G","C"],"A":["missense_variant","p.Thr71Lys","chrDemo",1912,"G","T"]}},{"c":"213","ref":"G","reg":"exon3","alts":{"T":["synonymous_variant","p.Thr71=","chrDemo",1911,"C","A"],"C":["synonymous_variant","p.Thr71=","chrDemo",1911,"C","G"],"A":["synonymous_variant","p.Thr71=","chrDemo",1911,"C","T"]}},{"c":"214","ref":"C","reg":"exon3","alts":{"T":["missense_variant","p.Pro72Ser","chrDemo",1910,"G","A"],"G":["missense_variant","p.Pro72Ala","chrDemo",1910,"G","C"],"A":["missense_variant","p.Pro72Thr","chrDemo",1910,"G","T"]}},{"c":"215","ref":"C","reg":"exon3","alts":{"T":["missense_variant","p.Pro72Leu","chrDemo",1909,"G","A"],"G":["missense_variant","p.Pro72Arg","chrDemo",1909,"G","C"],"A":["missense_variant","p.Pro72Gln","chrDemo",1909,"G","T"]}},{"c":"216","ref":"A","reg":"exon3","alts":{"T":["synonymous_variant","p.Pro72=","chrDemo",1908,"T","A"],"G":["synonymous_variant","p.Pro72=","chrDemo",1908,"T","C"],"C":["synonymous_variant","p.Pro72=","chrDemo",1908,"T","G"]}},{"c":"217","ref":"T","reg":"exon3","alts":{"G":["missense_variant","p.Phe73Val","chrDemo",1907,"A","C"],"C":["missense_variant","p.Phe73Leu","chrDemo",1907,"A","G"],"A":["missense_variant","p.Phe73Ile","chrDemo",1907,"A","T"]}},{"c":"218","ref":"T","reg":"exon3","alts":{"G":["missense_variant","p.Phe73Cys","chrDemo",1906,"A","C"],"C":["missense_variant","p.Phe73Ser","chrDemo",1906,"A","G"],"A":["missense_variant","p.Phe73Tyr","chrDemo",1906,"A","T"]}},{"c":"219","ref":"C","reg":"exon3","alts":{"T":["synonymous_variant","p.Phe73=","chrDemo",1905,"G","A"],"G":["missense_variant","p.Phe73Leu","chrDemo",1905,"G","C"],"A":["missense_variant","p.Phe73Leu","chrDemo",1905,"G","T"]}},{"c":"220","ref":"G","reg":"exon3","alts":{"T":["missense_variant","p.Asp74Tyr","chrDemo",1904,"C","A"],"C":["missense_variant","p.Asp74His","chrDemo",1904,"C","G"],"A":["missense_variant","p.Asp74Asn","chrDemo",1904,"C","T"]}},{"c":"221","ref":"A","reg":"exon3","alts":{"T":["missense_variant","p.Asp74Val","chrDemo",1903,"T","A"],"G":["missense_variant","p.Asp74Gly","chrDemo",1903,"T","C"],"C":["missense_variant","p.Asp74Ala","chrDemo",1903,"T","G"]}},{"c":"222","ref":"C","reg":"exon3","alts":{"T":["synonymous_variant","p.Asp74=","chrDemo",1902,"G","A"],"G":["missense_variant","p.Asp74Glu","chrDemo",1902,"G","C"],"A":["missense_variant","p.Asp74Glu","chrDemo",1902,"G","T"]}},{"c":"223","ref":"G","reg":"exon3","alts":{"T":["missense_variant","p.Val75Phe","chrDemo",1901,"C","A"],"C":["missense_variant","p.Val75Leu","chrDemo",1901,"C","G"],"A":["missense_variant","p.Val75Ile","chrDemo",1901,"C","T"]}},{"c":"224","ref":"T","reg":"exon3","alts":{"G":["missense_variant","p.Val75Gly","chrDemo",1900,"A","C"],"C":["missense_variant","p.Val75Ala","chrDemo",1900,"A","G"],"A":["missense_variant","p.Val75Asp","chrDemo",1900,"A","T"]}},{"c":"225","ref":"T","reg":"exon3","alts":{"G":["synonymous_variant","p.Val75=","chrDemo",1899,"A","C"],"C":["synonymous_variant","p.Val75=","chrDemo",1899,"A","G"],"A":["synonymous_variant","p.Val75=","chrDemo",1899,"A","T"]}},{"c":"226","ref":"C","reg":"exon3","alts":{"T":["stop_gained","p.Gln76Ter","chrDemo",1898,"G","A"],"G":["missense_variant","p.Gln76Glu","chrDemo",1898,"G","C"],"A":["missense_variant","p.Gln76Lys","chrDemo",1898,"G","T"]}},{"c":"227","ref":"A","reg":"exon3","alts":{"T":["missense_variant","p.Gln76Leu","chrDemo",1897,"T","A"],"G":["missense_variant","p.Gln76Arg","chrDemo",1897,"T","C"],"C":["missense_variant","p.Gln76Pro","chrDemo",1897,"T","G"]}},{"c":"228","ref":"A","reg":"exon3","alts":{"T":["missense_variant","p.Gln76His","chrDemo",1896,"T","A"],"G":["synonymous_variant","p.Gln76=","chrDemo",1896,"T","C"],"C":["missense_variant","p.Gln76His","chrDemo",1896,"T","G"]}}]}/*END-MAP-DATA*/;
+
+(function () {
+  const root = document.documentElement;
+  const T = {
+    en: { title: (g, t, a, b) => `${g} ${t}, ${a} to ${b}: every substitution`, ref: "reference base", none: "none", intron: "intron", exon: "exon" },
+    ko: { title: (g, t, a, b) => `${g} ${t}, ${a} – ${b}의 모든 치환`, ref: "reference 염기", none: "없음", intron: "인트론", exon: "엑손" }
+  };
+  let lang = "en";
+  try {
+    const q = new URLSearchParams(location.search).get("lang");
+    const saved = localStorage.getItem("vcfart-lang");
+    lang = q || saved || ((navigator.language || "").toLowerCase().startsWith("ko") ? "ko" : "en");
+  } catch (e) { /* storage unavailable */ }
+  if (lang !== "ko") lang = "en";
+
+  const LEVEL = {
+    splice_acceptor_variant: 5, splice_donor_variant: 5, stop_gained: 5, start_lost: 5, stop_lost: 5, frameshift_variant: 5,
+    missense_variant: 4, inframe_insertion: 4, inframe_deletion: 4, protein_altering_variant: 4,
+    splice_donor_5th_base_variant: 3, splice_region_variant: 3, splice_donor_region_variant: 3,
+    splice_polypyrimidine_tract_variant: 3, coding_sequence_variant: 3,
+    synonymous_variant: 2, stop_retained_variant: 2
+  };
+  const pretty = s => s.replace(/_variant$/, "").replace(/_/g, " ");
+  const BASES = ["A", "C", "G", "T"];
+  const cols = MAP.cols || [];
+  const n = cols.length;
+  const mapEl = document.getElementById("map");
+  const modelEl = document.getElementById("model");
+  const scroller = mapEl.parentElement;
+  scroller.style.setProperty("--n", n);
+  const template = `2rem repeat(${n}, minmax(9px, 1fr))`;
+  mapEl.style.gridTemplateColumns = template;
+  modelEl.style.gridTemplateColumns = template;
+
+  const cells = [];
+  const refCells = [];
+  const edges = new Set();
+  for (let j = 1; j < n; j++) if (cols[j].reg !== cols[j - 1].reg) edges.add(j);
+
+  function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text) e.textContent = text; return e; }
+
+  // reference row
+  const refRow = el("div", "row"); refRow.setAttribute("role", "row");
+  refRow.appendChild(el("div", "lab", ""));
+  cols.forEach((c, j) => { const r = el("div", "refc" + (edges.has(j) ? " edge" : ""), c.ref); refRow.appendChild(r); refCells.push(r); });
+  mapEl.appendChild(refRow);
+
+  BASES.forEach((b, i) => {
+    const row = el("div", "row"); row.setAttribute("role", "row");
+    const lab = el("div", "lab", b); lab.setAttribute("role", "rowheader"); row.appendChild(lab);
+    cells.push([]);
+    cols.forEach((c, j) => {
+      const d = el("div", "cell");
+      d.setAttribute("role", "gridcell");
+      d.tabIndex = -1;
+      d.style.setProperty("--i", j + i * 3);
+      d.dataset.r = i; d.dataset.c = j;
+      if (b === c.ref) { d.classList.add("wt"); }
+      else {
+        const a = c.alts[b];
+        d.classList.add("v" + (a ? (LEVEL[a[0]] || 1) : 1));
+      }
+      if (edges.has(j)) d.classList.add("edge");
+      row.appendChild(d); cells[i].push(d);
+    });
+    mapEl.appendChild(row);
+  });
+
+  // gene model under the map
+  modelEl.appendChild(el("div", "", ""));
+  let start = 0;
+  for (let j = 1; j <= n; j++) {
+    if (j === n || cols[j].reg !== cols[start].reg) {
+      const reg = cols[start].reg;
+      const kind = reg.startsWith("exon") ? "exon" : "intron";
+      const seg = el("div", "seg " + kind);
+      seg.style.gridColumn = `${start + 2} / ${j + 2}`;
+      const lbl = el("span"); lbl.dataset.reg = reg; seg.appendChild(lbl);
+      modelEl.appendChild(seg);
+      start = j;
+    }
+  }
+
+  let sel = null;
+  function select(i, j, focus) {
+    if (sel) { sel.classList.remove("sel"); sel.tabIndex = -1; refCells[+sel.dataset.c].classList.remove("hot"); }
+    sel = cells[i][j]; sel.classList.add("sel"); sel.tabIndex = 0; refCells[j].classList.add("hot");
+    if (focus) sel.focus({ preventScroll: false });
+    render();
+  }
+  function render() {
+    if (!sel) return;
+    const i = +sel.dataset.r, j = +sel.dataset.c, c = cols[j], b = BASES[i];
+    const t = T[lang];
+    const a = c.alts[b];
+    const set = (id, v) => { document.getElementById(id).textContent = v; };
+    if (!a) { set("r-c", `c.${c.c} ${c.ref}`); set("r-p", "—"); set("r-q", t.ref); set("r-v", "—"); }
+    else { set("r-c", `c.${c.c}${c.ref}>${b}`); set("r-p", a[1] || "—"); set("r-q", pretty(a[0])); set("r-v", `${a[2]} ${a[3]} ${a[4]} ${a[5]}`); }
+    sel.setAttribute("aria-label", `c.${c.c}${c.ref}>${b}`);
+  }
+  function relabel() {
+    const t = T[lang];
+    if (n) document.getElementById("maptitle").textContent = t.title(MAP.gene, MAP.tx, "c." + cols[0].c, "c." + cols[n - 1].c);
+    modelEl.querySelectorAll("span[data-reg]").forEach(s => {
+      const m = s.dataset.reg.match(/^(exon|intron)(\d+)$/);
+      s.textContent = m ? `${t[m[1]]} ${m[2]}` : s.dataset.reg;
+    });
+    const ends = document.querySelectorAll("#ends span");
+    if (n) { ends[0].textContent = "c." + cols[0].c; ends[1].textContent = "c." + cols[n - 1].c; }
+    render();
+  }
+
+  mapEl.addEventListener("pointerover", e => {
+    const d = e.target.closest(".cell"); if (d) select(+d.dataset.r, +d.dataset.c, false);
+  });
+  mapEl.addEventListener("click", e => {
+    const d = e.target.closest(".cell"); if (d) select(+d.dataset.r, +d.dataset.c, true);
+  });
+  mapEl.addEventListener("keydown", e => {
+    if (!sel) return;
+    let i = +sel.dataset.r, j = +sel.dataset.c;
+    if (e.key === "ArrowRight") j = Math.min(n - 1, j + 1);
+    else if (e.key === "ArrowLeft") j = Math.max(0, j - 1);
+    else if (e.key === "ArrowDown") i = Math.min(3, i + 1);
+    else if (e.key === "ArrowUp") i = Math.max(0, i - 1);
+    else if (e.key === "Home") j = 0;
+    else if (e.key === "End") j = n - 1;
+    else return;
+    e.preventDefault(); select(i, j, true);
+  });
+
+  // start on the most severe variant closest to an exon/intron border
+  let best = null;
+  cols.forEach((c, j) => BASES.forEach((b, i) => {
+    const a = c.alts[b]; if (!a) return;
+    const lv = LEVEL[a[0]] || 1;
+    let dist = n; edges.forEach(x => { dist = Math.min(dist, Math.abs(x - j)); });
+    const score = lv * 1000 - dist;
+    if (!best || score > best.s) best = { s: score, i, j };
+  }));
+  if (best) select(best.i, best.j, false);
+
+  function setLang(l) {
+    lang = l; root.dataset.lang = l; root.lang = l;
+    document.querySelectorAll(".lang button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.set === l)));
+    try { localStorage.setItem("vcfart-lang", l); } catch (e) { /* ignore */ }
+    relabel();
+  }
+  document.querySelectorAll(".lang button").forEach(b => b.addEventListener("click", () => setLang(b.dataset.set)));
+  setLang(lang);
+
+  const copyBtn = document.getElementById("copy");
+  copyBtn.addEventListener("click", async () => {
+    const txt = document.getElementById("pipcmd").textContent;
+    try { await navigator.clipboard.writeText(txt); } catch (e) { return; }
+    copyBtn.querySelector('[data-l="en"]').textContent = "Copied";
+    copyBtn.querySelector('[data-l="ko"]').textContent = "복사됨";
+    setTimeout(() => {
+      copyBtn.querySelector('[data-l="en"]').textContent = "Copy";
+      copyBtn.querySelector('[data-l="ko"]').textContent = "복사";
+    }, 1800);
+  });
+
+  requestAnimationFrame(() => mapEl.classList.add("puffin"));
+})();
+</script>
+</body>
+</html>

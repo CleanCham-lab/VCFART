@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+message: "If you use VCFART, please cite it as below."
+title: "VCFART: VCF ARTificial - saturation-mutagenesis VCF generator for MAVE, SGE and DMS"
+version: 1.0.0
+date-released: 2026-11-13
+license: MIT
+repository-code: "https://github.com/CleanCham-lab/VCFART"
+authors:
+  - family-names: Chae
+    given-names: Seung Won
+    affiliation: "Department of Laboratory Medicine, Seoul National University Hospital"
+keywords:
+  - MAVE
+  - saturation mutagenesis
+  - saturation genome editing
+  - deep mutational scanning
+  - VCF
+  - HGVS
